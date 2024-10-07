@@ -1,3 +1,4 @@
+# %%
 import os, sys
 sys.path.append(os.getcwd())
 
@@ -32,7 +33,7 @@ ITERS = 200000 # How many generator iterations to train for
 OUTPUT_DIM = 3072 # Number of pixels in CIFAR10 (3*32*32)
 
 lib.print_model_settings(locals().copy())
-
+# %%
 def LeakyReLU(x, alpha=0.2):
     return tf.maximum(alpha*x, x)
 
@@ -217,3 +218,5 @@ with tf.Session() as session:
             lib.plot.flush()
 
         lib.plot.tick()
+
+# %%

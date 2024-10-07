@@ -41,8 +41,8 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             mask[center, center+1:, :, :] = 0.
 
             # Mask out future channels
-            for i in xrange(mask_n_channels):
-                for j in xrange(mask_n_channels):
+            for i in range(mask_n_channels):
+                for j in range(mask_n_channels):
                     if (mask_type=='a' and i >= j) or (mask_type=='b' and i > j):
                         mask[
                             center,
@@ -103,7 +103,7 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
             with tf.name_scope('filter_mask'):
                 filters = filters * mask
 
-        result = tf.nn.conv2d(
+        result = tf.compat.v1.nn.conv2d(
             input=inputs, 
             filter=filters, 
             strides=[1, 1, stride, stride],
