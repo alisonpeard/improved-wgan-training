@@ -36,7 +36,8 @@ OUTPUT_DIM = 784 * CHANNELS             # Number of pixels in MNIST (28*28)
 # Dataset iterator
 # train_gen, dev_gen, test_gen = lib.mnist.load(BATCH_SIZE, BATCH_SIZE)
 # train_gen, dev_gen, test_gen = lib.mnist.load2(BATCH_SIZE, BATCH_SIZE) # uniform single channel
-train_gen, dev_gen, test_gen = lib.mnist.load3(BATCH_SIZE, BATCH_SIZE)   # Gumbel two channel
+# train_gen, dev_gen, test_gen = lib.mnist.load3(BATCH_SIZE, BATCH_SIZE)   # Gumbel two channel
+train_gen, dev_gen, test_gen = lib.mnist.load4(BATCH_SIZE, BATCH_SIZE)   # Uniform two channel
 print(next(train_gen())[0].shape)
 
 def inf_train_gen():
@@ -76,7 +77,7 @@ def Generator(n_samples, noise=None):
     """NCHW"""
     if noise is None:
         if GUMBEL:
-            noise = tf.random.uniform([n_samples, 128], minval=0, maxval=1)
+            noise = tf.random.uniform([n_samples, 128], minval=0, maxval=0.9999)
             noise = -tf.math.log(-tf.math.log(noise))
         else:
             noise = tf.random.normal([n_samples, 128])
@@ -218,7 +219,8 @@ elif MODE == 'dcgan':
 
 # For saving samples
 if GUMBEL:
-    fixed_noise = tf.constant(np.random.uniform(size=(128, 128)).astype('float32')) 
+    fixed_noise = tf.constant(np.random.uniform(size=(128, 128), minval=0, maxval=0.9999).astype('float32'))
+    fixed_noise = -tf.math.log(-tf.math.log(fixed_noise))
 else:
     fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
 fixed_noise_samples = Generator(128, noise=fixed_noise)
@@ -226,7 +228,7 @@ fixed_noise_samples = Generator(128, noise=fixed_noise)
 def generate_image(frame, true_dist):
     samples = session.run(fixed_noise_samples)
     lib.save_images.save_images(
-        samples.reshape((128, 28, 28)), 
+        samples.reshape((128, 28, 28, CHANNELS))[..., 0], # only save the winds for no
         'imgs/samples_{}.png'.format(frame)
     )
     np.savez('arrs/latest_sample.npz'.format(frame), samples=samples)

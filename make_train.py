@@ -9,4 +9,5 @@ data = xr.open_dataset(datapath).sel(channel=CHANNELS)
 arr_unif = data.uniform.values
 arr_gumbel = -np.log(-np.log(arr_unif))
 np.savez('train/gumbel.npz', data=arr_gumbel)
+np.savez('train/uniform.npz', data=arr_unif)
 # %%
