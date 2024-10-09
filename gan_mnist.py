@@ -40,7 +40,10 @@ def inf_train_gen():
         for images, targets in train_gen():
             yield images
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5bb1054ce7aec01200a7f750244f23872a84bb99
 tf.compat.v1.disable_eager_execution() # NB: after loading data
 lib.print_model_settings(locals().copy())
 
@@ -230,7 +233,10 @@ def generate_image(frame, true_dist):
     np.savez('arrs/latest_sample.npz'.format(frame), samples=samples)
 
 # %% Train loop
+<<<<<<< HEAD
 print(tf.config.list_physical_devices('GPU')) # check GPU being used
+=======
+>>>>>>> 5bb1054ce7aec01200a7f750244f23872a84bb99
 with tf.compat.v1.Session() as session:
     print("Starting session...")
     session.run(tf.compat.v1.initialize_all_variables())

@@ -2,14 +2,12 @@
 import numpy as np
 import glob
 
-<<<<<<< HEAD
 sampledir = '/Users/alison/Documents/DPhil/git-repos/improved-wgan-training/arrs/'
 samples = glob.glob(sampledir + 'samples_*.npz')
 samples.sort()
 samplepath = samples[-1] # get most recent sample
-=======
+
 samplepath = "arrs/latest_sample.npz"
->>>>>>> 5bb1054ce7aec01200a7f750244f23872a84bb99
 
 # %%
 print("Loading most recent sample: ", samplepath)
@@ -26,11 +24,7 @@ import matplotlib.pyplot as plt
 
 contour = True
 i = np.random.randint(0, x.shape[0])
-<<<<<<< HEAD
 i = 27
-=======
-# i = 27
->>>>>>> 5bb1054ce7aec01200a7f750244f23872a84bb99
 lats = np.linspace(10, 25, 28)
 lons = np.linspace(80, 95, 28)
 
@@ -45,9 +39,6 @@ ax.add_feature(feature.COASTLINE, edgecolor='black', linewidth=0.1)
 ax.add_feature(feature.BORDERS, linestyle=':', edgecolor='black', linewidth=0.1)
 ax.set_title('Sample from GAN over Bay of Bengal')
 
-<<<<<<< HEAD
-# %%
-=======
 # %% copy the plots png style from
 vmin = 0
 vmax = 1
@@ -71,4 +62,4 @@ for i, ax in enumerate(axs.ravel()):
 
 plt.tight_layout()
 # %%
->>>>>>> 5bb1054ce7aec01200a7f750244f23872a84bb99
+
