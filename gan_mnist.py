@@ -26,18 +26,21 @@ DIM = 64 # Model dimensionality
 BATCH_SIZE = 50 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
-ITERS = 200_000 # How many generator iterations to train for 
+ITERS = 1 #200_000 # How many generator iterations to train for 
 OUTPUT_DIM = 784 # Number of pixels in MNIST (28*28)
+GUMBEL = True
+CHANNELS = 2
 
 # Dataset iterator
 # train_gen, dev_gen, test_gen = lib.mnist.load(BATCH_SIZE, BATCH_SIZE)
-train_gen, dev_gen, test_gen = lib.mnist.load2(BATCH_SIZE, BATCH_SIZE)
+train_gen, dev_gen, test_gen = lib.mnist.load2(BATCH_SIZE, BATCH_SIZE) # uniform single channel
+train_gen, dev_gen, test_gen = lib.mnist.load3(BATCH_SIZE, BATCH_SIZE) # Gumbel two channel
 def inf_train_gen():
     while True:
         for images, targets in train_gen():
             yield images
 
-tf.compat.v1.disable_eager_execution()
+tf.compat.v1.disable_eager_execution() # NB: after loading data
 lib.print_model_settings(locals().copy())
 
 # %%
@@ -64,9 +67,15 @@ def LeakyReLULayer(name, n_in, n_out, inputs):
     )
     return LeakyReLU(output)
 
+
 def Generator(n_samples, noise=None):
+    """NCHW"""
     if noise is None:
-        noise = tf.random.normal([n_samples, 128])
+        if GUMBEL:
+            noise = tf.random.uniform([n_samples, 128], minval=0, maxval=1)
+            noise = -tf.math.log(-tf.math.log(noise))
+        else:
+            noise = tf.random.normal([n_samples, 128])
 
     output = lib.ops.linear.Linear('Generator.Input', 128, 4*4*4*DIM, noise)
     if MODE == 'wgan':
@@ -86,13 +95,16 @@ def Generator(n_samples, noise=None):
         output = lib.ops.batchnorm.Batchnorm('Generator.BN3', [0,2,3], output)
     output = tf.nn.relu(output)
 
-    output = lib.ops.deconv2d.Deconv2D('Generator.5', DIM, 1, 5, output)
-    output = tf.nn.sigmoid(output)
+    output = lib.ops.deconv2d.Deconv2D('Generator.5', DIM, CHANNELS, 5, output)
+    if not GUMBEL:
+        output = tf.nn.sigmoid(output)
 
-    return tf.reshape(output, [-1, OUTPUT_DIM])
+    return tf.reshape(output, [-1, CHANNELS, OUTPUT_DIM])
+
 
 def Discriminator(inputs):
-    output = tf.reshape(inputs, [-1, 1, 28, 28])
+    """NCHW"""
+    output = tf.reshape(inputs, [-1, CHANNELS, 28, 28])
 
     output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
     output = LeakyReLU(output)
@@ -113,7 +125,7 @@ def Discriminator(inputs):
     return tf.reshape(output, [-1])
 
 # %%
-real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
+real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, CHANNELS, OUTPUT_DIM])
 fake_data = Generator(BATCH_SIZE)
 
 disc_real = Discriminator(real_data)
@@ -202,7 +214,10 @@ elif MODE == 'dcgan':
     clip_disc_weights = None
 
 # For saving samples
-fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
+if GUMBEL:
+    fixed_noise = tf.constant(np.random.uniform(size=(128, 128)).astype('float32')) 
+else:
+    fixed_noise = tf.constant(np.random.normal(size=(128, 128)).astype('float32'))
 fixed_noise_samples = Generator(128, noise=fixed_noise)
 
 def generate_image(frame, true_dist):

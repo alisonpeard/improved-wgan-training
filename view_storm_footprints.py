@@ -54,4 +54,6 @@ for i, ax in enumerate(axs.ravel()):
     ax.set_yticks([])
     ax.label_outer()
     ax.axis('off')
+
+plt.tight_layout()
 # %%
