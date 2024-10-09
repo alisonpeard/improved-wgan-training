@@ -19,7 +19,6 @@ import tflib.ops.deconv2d
 import tflib.save_images
 import tflib.mnist
 import tflib.plot
-tf.compat.v1.disable_eager_execution()
 
 # %%
 MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
@@ -27,11 +26,21 @@ DIM = 64 # Model dimensionality
 BATCH_SIZE = 50 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
-ITERS = 200000 # How many generator iterations to train for 
+ITERS = 200_000 # How many generator iterations to train for 
 OUTPUT_DIM = 784 # Number of pixels in MNIST (28*28)
 
+# Dataset iterator
+# train_gen, dev_gen, test_gen = lib.mnist.load(BATCH_SIZE, BATCH_SIZE)
+train_gen, dev_gen, test_gen = lib.mnist.load2(BATCH_SIZE, BATCH_SIZE)
+def inf_train_gen():
+    while True:
+        for images, targets in train_gen():
+            yield images
+
+tf.compat.v1.disable_eager_execution()
 lib.print_model_settings(locals().copy())
 
+# %%
 def LeakyReLU(x, alpha=0.2):
     return tf.maximum(alpha*x, x)
 
@@ -202,25 +211,13 @@ def generate_image(frame, true_dist):
         samples.reshape((128, 28, 28)), 
         'imgs/samples_{}.png'.format(frame)
     )
+    np.savez('arrs/latest_sample.npz'.format(frame), samples=samples)
 
-# %%
-# Dataset iterator
-train_gen, dev_gen, test_gen = lib.mnist.load(BATCH_SIZE, BATCH_SIZE)
-def inf_train_gen():
-    while True:
-        for images,targets in train_gen():
-            yield images
-
-# %% check out data attributes
-
-# %% add my data instead
-
-# %%
-# Train loop
+# %% Train loop
 with tf.compat.v1.Session() as session:
-
+    print("Starting session...")
     session.run(tf.compat.v1.initialize_all_variables())
-
+    saver = tf.compat.v1.train.Saver(max_to_keep=4, keep_checkpoint_every_n_hours=2) # https://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
     gen = inf_train_gen()
 
     for iteration in range(ITERS):
@@ -247,6 +244,7 @@ with tf.compat.v1.Session() as session:
 
         # Calculate dev loss and generate samples every 100 iters
         if iteration % 100 == 99:
+            print("Iteration: ", iteration)
             dev_disc_costs = []
             for images,_ in dev_gen():
                 _dev_disc_cost = session.run(
@@ -264,4 +262,16 @@ with tf.compat.v1.Session() as session:
 
         lib.plot.tick()
 
+    # Save model weights
+    print("Saving model weights...")
+    saver.save(session, 'wts/model_weights')
+
+print("Done!")
+
 # %%
+# # https://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+# with tf.Session() as sess:    
+#     saver = tf.train.import_meta_graph('my-model-1000.meta')
+#     saver.restore(sess,tf.train.latest_checkpoint('./'))
+#     print(sess.run('w1:0'))
+# %%

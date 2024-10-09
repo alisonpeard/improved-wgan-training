@@ -59,6 +59,36 @@ def load(batch_size, test_batch_size, n_labelled=None):
         u.encoding = 'latin1'
         train_data, dev_data, test_data = u.load()
 
+    print("Train data shape: {}".format(train_data[0].shape))
+    print("Dev data shape: {}".format(dev_data[0].shape))
+    print("Test data shape: {}".format(test_data[0].shape))
+
+    return (
+        mnist_generator(train_data, batch_size, n_labelled), 
+        mnist_generator(dev_data, test_batch_size, n_labelled), 
+        mnist_generator(test_data, test_batch_size, n_labelled)
+    )
+
+
+def load2(batch_size, test_batch_size, im_size=(28, 28), n_labelled=None):
+    import numpy as np
+    import tensorflow as tf
+    filepath = 'train/data_pretrain.npz'
+    data = numpy.load(filepath)['arr_0']
+    data = data[..., np.newaxis]
+    data = tf.image.resize(data, im_size)
+    data = data.numpy()
+    data = data.reshape([data.shape[0], 784, 1])
+    np.random.shuffle(data) # only shuffle first dimension
+
+    train_data = data[:50000, ...]
+    dev_data = data[50000:60000, ...]
+    test_data = data[60000:70000, ...]
+
+    train_data = (train_data, np.max(train_data, axis=(1,2)))
+    dev_data = (dev_data, np.max(dev_data, axis=(1,2)))
+    test_data = (test_data, np.max(test_data, axis=(1,2)))
+
     return (
         mnist_generator(train_data, batch_size, n_labelled), 
         mnist_generator(dev_data, test_batch_size, n_labelled), 
