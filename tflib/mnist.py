@@ -1,5 +1,4 @@
 import numpy
-
 import os
 import urllib
 import gzip
@@ -58,6 +57,65 @@ def load(batch_size, test_batch_size, n_labelled=None):
         u = pickle._Unpickler(f) # https://github.com/MichalDanielDobrzanski/DeepLearningPython/issues/15#issuecomment-689788837
         u.encoding = 'latin1'
         train_data, dev_data, test_data = u.load()
+
+    print("Train data shape: {}".format(train_data[0].shape))
+    print("Dev data shape: {}".format(dev_data[0].shape))
+    print("Test data shape: {}".format(test_data[0].shape))
+
+    return (
+        mnist_generator(train_data, batch_size, n_labelled), 
+        mnist_generator(dev_data, test_batch_size, n_labelled), 
+        mnist_generator(test_data, test_batch_size, n_labelled)
+    )
+
+
+def load2(batch_size, test_batch_size, im_size=(28, 28), n_labelled=None):
+    """For single channel (wind) uniform data."""
+    import tensorflow as tf
+    filepath = 'train/data_pretrain.npz'
+    data = numpy.load(filepath)['arr_0']
+    data = data[..., numpy.newaxis]
+    data = tf.image.resize(data, im_size)
+    data = data.numpy()
+    data = data.reshape([data.shape[0], 784, 1])
+    numpy.random.shuffle(data) # only shuffle first dimension
+
+    train_data = data[:50000, ...]
+    dev_data = data[50000:60000, ...]
+    test_data = data[60000:70000, ...]
+
+    train_data = (train_data, numpy.max(train_data, axis=(1,2)))
+    dev_data = (dev_data, numpy.max(dev_data, axis=(1,2)))
+    test_data = (test_data, numpy.max(test_data, axis=(1,2)))
+
+    return (
+        mnist_generator(train_data, batch_size, n_labelled), 
+        mnist_generator(dev_data, test_batch_size, n_labelled), 
+        mnist_generator(test_data, test_batch_size, n_labelled)
+    )
+
+def load3(batch_size, test_batch_size, im_size=(28, 28), n_labelled=None):
+    """For two-channel (wind, tp) Gumbel data."""
+    import tensorflow as tf
+    filepath = 'train/gumbel.npz'
+    data = numpy.load(filepath)['data']
+    data = tf.image.resize(data, im_size)
+    data = data.numpy()
+    data = data.reshape([data.shape[0], 784, 2])
+    numpy.random.shuffle(data) # only shuffles first dimension
+
+    train_data = data[:50000, ...]
+    dev_data = data[50000:60000, ...]
+    test_data = data[60000:70000, ...]
+
+    train_data = (train_data, numpy.max(train_data[..., 0], axis=(1)))
+    dev_data = (dev_data, numpy.max(dev_data[..., 0], axis=(1)))
+    test_data = (test_data, numpy.max(test_data[..., 0], axis=(1)))
+
+    # NHWC --> NCHW
+    train_data = (train_data[0].transpose(0, 1, 2), train_data[1])
+    dev_data = (dev_data[0].transpose(0, 1, 2), dev_data[1])
+    test_data = (test_data[0].transpose(0, 1, 2), test_data[1])
 
     return (
         mnist_generator(train_data, batch_size, n_labelled), 

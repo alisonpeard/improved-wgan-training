@@ -119,5 +119,4 @@ def Conv2D(name, input_dim, output_dim, filter_size, inputs, he_init=True, mask_
 
             result = tf.nn.bias_add(result, _biases, data_format='NCHW')
 
-
         return result
