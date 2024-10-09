@@ -19,21 +19,24 @@ import tflib.save_images
 import tflib.mnist
 import tflib.plot
 
+from dotenv import load_dotenv, find_dotenv
+load_dotenv()
+
 # %%
-MODE = 'wgan-gp' # dcgan, wgan, or wgan-gp
-DIM = 64 # Model dimensionality
-BATCH_SIZE = 50 # Batch size
-CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
-LAMBDA = 10 # Gradient penalty lambda hyperparameter
-ITERS = 1 #200_000 # How many generator iterations to train for 
-GUMBEL = True
-CHANNELS = 2
-OUTPUT_DIM = 784 * CHANNELS # Number of pixels in MNIST (28*28)
+MODE = 'wgan-gp'                        # dcgan, wgan, or wgan-gp
+DIM = 64                                # Model dimensionality
+BATCH_SIZE = 50                         # Batch size
+CRITIC_ITERS = 5                        # For WGAN and WGAN-GP, number of critic iters per gen iter
+LAMBDA = 10                             # Gradient penalty lambda hyperparameter
+ITERS =int(os.getenv('ITERS'))          # How many generator iterations to train for 
+GUMBEL = bool(os.getenv('GUMBEL'))
+CHANNELS = int(os.getenv('CHANNELS'))
+OUTPUT_DIM = 784 * CHANNELS             # Number of pixels in MNIST (28*28)
 
 # Dataset iterator
 # train_gen, dev_gen, test_gen = lib.mnist.load(BATCH_SIZE, BATCH_SIZE)
 # train_gen, dev_gen, test_gen = lib.mnist.load2(BATCH_SIZE, BATCH_SIZE) # uniform single channel
-train_gen, dev_gen, test_gen = lib.mnist.load3(BATCH_SIZE, BATCH_SIZE) # Gumbel two channel
+train_gen, dev_gen, test_gen = lib.mnist.load3(BATCH_SIZE, BATCH_SIZE)   # Gumbel two channel
 print(next(train_gen())[0].shape)
 
 def inf_train_gen():
