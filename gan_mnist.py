@@ -1,8 +1,7 @@
 # %%
 import os, sys
-sys.path.append(os.getcwd())
-
 import time
+sys.path.append(os.getcwd())
 
 import matplotlib
 matplotlib.use('Agg')
@@ -27,23 +26,21 @@ BATCH_SIZE = 50 # Batch size
 CRITIC_ITERS = 5 # For WGAN and WGAN-GP, number of critic iters per gen iter
 LAMBDA = 10 # Gradient penalty lambda hyperparameter
 ITERS = 1 #200_000 # How many generator iterations to train for 
-OUTPUT_DIM = 784 # Number of pixels in MNIST (28*28)
 GUMBEL = True
 CHANNELS = 2
+OUTPUT_DIM = 784 * CHANNELS # Number of pixels in MNIST (28*28)
 
 # Dataset iterator
 # train_gen, dev_gen, test_gen = lib.mnist.load(BATCH_SIZE, BATCH_SIZE)
-train_gen, dev_gen, test_gen = lib.mnist.load2(BATCH_SIZE, BATCH_SIZE) # uniform single channel
+# train_gen, dev_gen, test_gen = lib.mnist.load2(BATCH_SIZE, BATCH_SIZE) # uniform single channel
 train_gen, dev_gen, test_gen = lib.mnist.load3(BATCH_SIZE, BATCH_SIZE) # Gumbel two channel
+print(next(train_gen())[0].shape)
+
 def inf_train_gen():
     while True:
         for images, targets in train_gen():
             yield images
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 5bb1054ce7aec01200a7f750244f23872a84bb99
 tf.compat.v1.disable_eager_execution() # NB: after loading data
 lib.print_model_settings(locals().copy())
 
@@ -92,7 +89,7 @@ def Generator(n_samples, noise=None):
         output = lib.ops.batchnorm.Batchnorm('Generator.BN2', [0,2,3], output)
     output = tf.nn.relu(output)
 
-    output = output[:,:,:7,:7]
+    output = output[:,:,:7,:7] # some sort of clipping, why?
 
     output = lib.ops.deconv2d.Deconv2D('Generator.3', 2*DIM, DIM, 5, output)
     if MODE == 'wgan':
@@ -103,13 +100,12 @@ def Generator(n_samples, noise=None):
     if not GUMBEL:
         output = tf.nn.sigmoid(output)
 
-    return tf.reshape(output, [-1, CHANNELS, OUTPUT_DIM])
+    return tf.reshape(output, [-1, OUTPUT_DIM])
 
 
 def Discriminator(inputs):
     """NCHW"""
     output = tf.reshape(inputs, [-1, CHANNELS, 28, 28])
-
     output = lib.ops.conv2d.Conv2D('Discriminator.1',1,DIM,5,output,stride=2)
     output = LeakyReLU(output)
 
@@ -125,13 +121,12 @@ def Discriminator(inputs):
 
     output = tf.reshape(output, [-1, 4*4*4*DIM])
     output = lib.ops.linear.Linear('Discriminator.Output', 4*4*4*DIM, 1, output)
-
     return tf.reshape(output, [-1])
 
 # %%
-real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, CHANNELS, OUTPUT_DIM])
-fake_data = Generator(BATCH_SIZE)
+real_data = tf.compat.v1.placeholder(tf.float32, shape=[BATCH_SIZE, OUTPUT_DIM])
 
+fake_data = Generator(BATCH_SIZE)
 disc_real = Discriminator(real_data)
 disc_fake = Discriminator(fake_data)
 
@@ -170,6 +165,7 @@ elif MODE == 'wgan-gp':
         minval=0.,
         maxval=1.
     )
+
     differences = fake_data - real_data
     interpolates = real_data + (alpha*differences)
     gradients = tf.gradients(Discriminator(interpolates), [interpolates])[0]
@@ -233,10 +229,7 @@ def generate_image(frame, true_dist):
     np.savez('arrs/latest_sample.npz'.format(frame), samples=samples)
 
 # %% Train loop
-<<<<<<< HEAD
 print(tf.config.list_physical_devices('GPU')) # check GPU being used
-=======
->>>>>>> 5bb1054ce7aec01200a7f750244f23872a84bb99
 with tf.compat.v1.Session() as session:
     print("Starting session...")
     session.run(tf.compat.v1.initialize_all_variables())

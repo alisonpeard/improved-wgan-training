@@ -6,6 +6,7 @@ import pickle
 
 def mnist_generator(data, batch_size, n_labelled, limit=None):
     images, targets = data
+    n, hwc = images.shape
 
     rng_state = numpy.random.get_state()
     numpy.random.shuffle(images)
@@ -29,7 +30,7 @@ def mnist_generator(data, batch_size, n_labelled, limit=None):
             numpy.random.set_state(rng_state)
             numpy.random.shuffle(labelled)
 
-        image_batches = images.reshape(-1, batch_size, 784)
+        image_batches = images.reshape(-1, batch_size, hwc)
         target_batches = targets.reshape(-1, batch_size)
 
         if n_labelled is not None:
@@ -112,10 +113,15 @@ def load3(batch_size, test_batch_size, im_size=(28, 28), n_labelled=None):
     dev_data = (dev_data, numpy.max(dev_data[..., 0], axis=(1)))
     test_data = (test_data, numpy.max(test_data[..., 0], axis=(1)))
 
-    # NHWC --> NCHW
-    train_data = (train_data[0].transpose(0, 1, 2), train_data[1])
-    dev_data = (dev_data[0].transpose(0, 1, 2), dev_data[1])
-    test_data = (test_data[0].transpose(0, 1, 2), test_data[1])
+    # NHWC --> NC*H*W
+    # train_data = (train_data[0].transpose(0, 1, 2), train_data[1])
+    # dev_data = (dev_data[0].transpose(0, 1, 2), dev_data[1])
+    # test_data = (test_data[0].transpose(0, 1, 2), test_data[1])
+
+    _, hw,c = train_data[0].shape
+    train_data = (train_data[0].reshape(50000, hw*c), train_data[1])
+    dev_data = (dev_data[0].reshape(10000, hw*c), dev_data[1])
+    test_data = (test_data[0].reshape(10000, hw*c), test_data[1])
 
     return (
         mnist_generator(train_data, batch_size, n_labelled), 
